@@ -307,7 +307,7 @@ header .sub-title {
     display: -webkit-flex;
     display: flex;
 }
-.download, .details-btn {
+.details-btn {
     display: -webkit-box;
     display: -webkit-flex;
     display: flex;
@@ -315,29 +315,15 @@ header .sub-title {
     align-items: center;
     -webkit-justify-content: center;
     justify-content: center;
+    width: 100%;
     min-height: 42px;
     border-radius: 10px;
     font-weight: bold;
     font-size: 13px;
     cursor: pointer;
-}
-.download {
-    background: #4f46e5;
-    color: white;
-    text-decoration: none;
-    border: 0;
-    -webkit-flex: 1;
-    flex: 1;
-    margin-left: 7px;
-}
-.download:hover { background: #6366f1; }
-.details-btn {
     background: #202431;
     color: #d8dce5;
     border: 1px solid #343945;
-    width: 42px;
-    -webkit-flex-shrink: 0;
-    flex-shrink: 0;
 }
 .details-btn:hover { background: #2a2f3c; border-color: #6366f1; }
 
@@ -547,8 +533,7 @@ header .sub-title {
     .game-info { padding: 9px; }
     .game-name { font-size: 13px; min-height: 36px; margin-bottom: 8px; }
     .details { font-size: 11px; line-height: 1.7; margin-bottom: 10px; }
-    .download, .details-btn { min-height: 38px; font-size: 11px; }
-    .details-btn { width: 38px; }
+    .details-btn { min-height: 38px; font-size: 11px; }
     .size-badge { font-size: 10px; padding: 3px 7px; top: 6px; left: 6px; }
     .back-top { bottom: 15px; left: 15px; width: 42px; height: 42px; }
     .cover::before { font-size: 36px; }
@@ -563,7 +548,7 @@ header .sub-title {
 @media (max-width: 360px) {
     .game { width: -webkit-calc(100% - 10px); width: calc(100% - 10px); }
     .game-name { font-size: 14px; }
-    .download { font-size: 13px; }
+    .details-btn { font-size: 13px; }
 }
 </style>
 </head>
@@ -653,11 +638,10 @@ header .sub-title {
                 </div>
             </div>
 
-            <input type="text" class="modal-url-input" id="modalUrlInput" onclick="this.select();" placeholder="لا يوجد رابط">
+            <input type="text" class="modal-url-input" id="modalUrlInput" placeholder="لا يوجد رابط">
 
             <div class="modal-actions">
                 <a id="modalDownload" href="#" target="_blank" rel="noopener noreferrer">⬇ فتح الرابط</a>
-                <button id="modalCopy" type="button">📋 نسخ الرابط</button>
             </div>
         </div>
     </div>
@@ -8510,7 +8494,6 @@ var modalSize = document.getElementById("modalSize");
 var modalTitleId = document.getElementById("modalTitleId");
 var modalUrlInput = document.getElementById("modalUrlInput");
 var modalDownload = document.getElementById("modalDownload");
-var modalCopy = document.getElementById("modalCopy");
 
 /* ═══════════════════════════════════════════════════════════════
    الثوابت
@@ -8725,26 +8708,13 @@ function createGameCard(game) {
     var actions = document.createElement("div");
     actions.className = "card-actions";
 
-    var download = document.createElement("a");
-    download.className = "download";
-    download.href = getGameURL(game) || "#";
-    download.target = "_blank";
-    download.rel = "noopener noreferrer";
-    download.textContent = "⬇ تحميل";
-    if (!getGameURL(game)) {
-        download.removeAttribute("href");
-        download.style.opacity = "0.5";
-        download.textContent = "⚠ لا رابط";
-    }
-
     var detailsButton = document.createElement("button");
     detailsButton.type = "button";
     detailsButton.className = "details-btn";
     detailsButton.textContent = "ⓘ";
-    detailsButton.setAttribute("aria-label", "تفاصيل اللعبة");
+    detailsButton.setAttribute("aria-label", "تفاصيل اللعبة ورابط مباشر pkg");
     detailsButton.onclick = function () { openGameModal(game); };
 
-    actions.appendChild(download);
     actions.appendChild(detailsButton);
     info.appendChild(name);
     info.appendChild(details);
@@ -9007,84 +8977,6 @@ function closeGameModal() {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   نسخ الرابط — متوافق مع PS4
-   ═══════════════════════════════════════════════════════════════ */
-function copyCurrentURL() {
-    var url = currentModalGame ? getGameURL(currentModalGame) : "";
-    if (!url) {
-        modalCopy.textContent = "⚠ لا يوجد رابط";
-        setTimeout(function () { modalCopy.textContent = "📋 نسخ الرابط"; }, 1500);
-        return;
-    }
-
-    var copied = false;
-
-    /* ─── محاولة 1: execCommand (الأفضل لـ PS4 والمتصفحات القديمة) ─── */
-    try {
-        var textarea = document.createElement("textarea");
-        textarea.value = url;
-        textarea.style.position = "fixed";
-        textarea.style.top = "0";
-        textarea.style.left = "0";
-        textarea.style.width = "1px";
-        textarea.style.height = "1px";
-        textarea.style.padding = "0";
-        textarea.style.border = "none";
-        textarea.style.outline = "none";
-        textarea.style.boxShadow = "none";
-        textarea.style.background = "transparent";
-        textarea.style.opacity = "0";
-        textarea.setAttribute("readonly", "");
-        document.body.appendChild(textarea);
-
-        textarea.select();
-        textarea.setSelectionRange(0, url.length);
-
-        /* iOS */
-        if (navigator.userAgent.match(/ipad|iphone/i)) {
-            var range = document.createRange();
-            range.selectNodeContents(textarea);
-            var sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-            textarea.setSelectionRange(0, 999999);
-        }
-
-        copied = document.execCommand("copy");
-        document.body.removeChild(textarea);
-    } catch (e) {
-        console.warn("execCommand failed:", e);
-    }
-
-    /* ─── محاولة 2: clipboard API (للمتصفحات الحديثة) ─── */
-    if (!copied && navigator.clipboard && navigator.clipboard.writeText) {
-        try {
-            navigator.clipboard.writeText(url);
-            copied = true;
-        } catch (e) {
-            console.warn("clipboard API failed:", e);
-        }
-    }
-
-    /* ─── عرض النتيجة ─── */
-    if (copied) {
-        modalCopy.textContent = "✅ تم النسخ";
-    } else {
-        /* فشل → حدد النص في الحقل ليُنسخ يدويًا */
-        modalCopy.textContent = "❌ حدد الرابط يدويًا";
-        if (modalUrlInput) {
-            modalUrlInput.focus();
-            modalUrlInput.select();
-            modalUrlInput.setSelectionRange(0, modalUrlInput.value.length);
-        }
-    }
-
-    setTimeout(function () {
-        modalCopy.textContent = "📋 نسخ الرابط";
-    }, 2000);
-}
-
-/* ═══════════════════════════════════════════════════════════════
    Infinite Scroll
    ═══════════════════════════════════════════════════════════════ */
 function setupInfiniteScroll() {
@@ -9157,8 +9049,6 @@ document.addEventListener("keydown", function (event) {
     }
 });
 
-modalCopy.addEventListener("click", copyCurrentURL);
-
 window.addEventListener("scroll", function () {
     if (window.scrollY > 400) backTop.className = "back-top show";
     else backTop.className = "back-top";
@@ -9175,6 +9065,5 @@ imageObserver = setupImageObserver();
 setupInfiniteScroll();
 loadGames();
 </script>
-
 </body>
 </html>
